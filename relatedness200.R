@@ -1,23 +1,16 @@
 library(SNPRelate)
+library(ggplot2)
 
-# 指定 PLINK 文件的路径（不包括文件扩展名）
 plink_path <- "C:/Users/86180/Desktop/genetic/euro_10Ksnp"
-
-# 指定输出 GDS 文件的路径和文件名
 out_gds_file <- "C:/Users/86180/Desktop/genetic/euro_10Ksnp.gds"
 
 # 读取 PLINK 文件并生成 GDS 文件
 snpgdsBED2GDS(bed.fn = paste0(plink_path, ".bed"), bim.fn = paste0(plink_path, ".bim"), fam.fn = paste0(plink_path, ".fam"), out.gdsfn = out_gds_file)
-
-# 打开 GDS 文件
 gdsfile <- snpgdsOpen(out_gds_file)
 
-# 查看 GDS 文件的摘要信息
+#读取基因型矩阵
 summary_data <- snpgdsSummary(gdsfile)
-
-# 从 GDS 文件中提取基因型矩阵
 genotype_matrix <- snpgdsGetGeno(gdsfile)
-
 dim(genotype_matrix)
 
 #genotype_matrix <- genotype_matrix[1:20,]
@@ -105,6 +98,7 @@ A = genotype_matrix2^2
 V <- apply(A, 1, sum)/m
 #V
 
+#GRM
 G <- (genotype_matrix2 %*% t(genotype_matrix2)) /m
 
 G
@@ -157,5 +151,22 @@ for(i in 1:m){
 }
 
 plot(SNP,-log10(P_value))
+
+#提取染色体信息
+chromosome <- read.gdsn(index.gdsn(gdsfile, "snp.chromosome"))
+
+chr_AB <- lapply(chromosome, function(x) if (x %% 2 == 0) "A" else "B")
+
+data=data.frame(s1=1:m,s2=-log10(P_value),s3=chromosome)
+ggplot(data = data)+geom_segment(aes(x =s1, y =0,xend =s1, yend =s2,color=s3),
+                                 linetype=1,size=0.15)+
+  scale_color_manual(values = c('#fa450f','#242b66'))+ 
+  scale_y_continuous(expand = c(0,0),limits =c(0,20),breaks=seq(0,20,2))+
+  scale_x_discrete(expand = c(0,0),breaks=seq(2500,100000,5000),labels=paste0('chr',1:20),limits=as.character(c(1:100000)))+
+  theme_classic()+ 
+  labs(x='chromosome',y='-log10(P_value)')+ 
+  theme(legend.position = 'none')+ 
+  annotate(geom = 'segment',x=0,xend=nrow(data),y=quantile(data$s2,0.95), 
+           yend=quantile(data$s2,0.95),lty=4,color='black')
 
 
