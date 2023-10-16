@@ -150,23 +150,47 @@ for(i in 1:m){
   P_value[i]<- summary(lm.fit)$coefficients[2,4]
 }
 
-plot(SNP,-log10(P_value))
+#plot(SNP,-log10(P_value))
 
 #提取染色体信息
 chromosome <- read.gdsn(index.gdsn(gdsfile, "snp.chromosome"))
 
-chr_AB <- lapply(chromosome, function(x) if (x %% 2 == 0) "A" else "B")
+#chr_AB <- lapply(chromosome, function(x) if (x %% 2 == 0) "A" else "B")
+
 
 data=data.frame(s1=1:m,s2=-log10(P_value),s3=chromosome)
-ggplot(data = data)+geom_segment(aes(x =s1, y =0,xend =s1, yend =s2,color=s3),
-                                 linetype=1,size=0.15)+
-  scale_color_manual(values = c('#fa450f','#242b66'))+ 
-  scale_y_continuous(expand = c(0,0),limits =c(0,20),breaks=seq(0,20,2))+
-  scale_x_discrete(expand = c(0,0),breaks=seq(2500,100000,5000),labels=paste0('chr',1:20),limits=as.character(c(1:100000)))+
+
+chr_gap=vector()
+chr=vector()
+j <- 1
+for (i in 2:m-1){
+  if(data$s3[i] != data$s3[i+1]){
+    chr_gap[j] <- i
+    j <- j+1
+  }
+}
+
+j <- 2
+chr[1] <- chr_gap[1]/2
+chr[22] <- (chr_gap[21]+100000)/2
+for (i in 1:20){
+  chr[j] <- (chr_gap[i]+chr_gap[i+1])/2
+  j <- j+1
+}
+
+colors <- heat.colors(length(unique(data$s3)))
+c('#fa450f','#242b66')
+ggplot(data = data)+geom_segment(aes(x =s1, y =0,xend =s1, yend =s2, color= as.factor(s3)),
+                                 linetype=1, linewidth=0.5)+
+  scale_fill_manual(values = colors)+ 
+  scale_y_continuous(expand = c(0,0),limits =c(0,26),breaks=seq(0,26,2))+
+  scale_x_discrete(expand = c(0,0),breaks=chr,labels=paste0('chr',1:22),limits=as.character(c(1:100000)))+
   theme_classic()+ 
   labs(x='chromosome',y='-log10(P_value)')+ 
   theme(legend.position = 'none')+ 
   annotate(geom = 'segment',x=0,xend=nrow(data),y=quantile(data$s2,0.95), 
-           yend=quantile(data$s2,0.95),lty=4,color='black')
+           yend=quantile(data$s2,0.95),lty=4,color='red')
 
+RColorBrewer::display.brewer.all()
 
+、heat.colors()、terrain.colors()
