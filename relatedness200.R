@@ -196,3 +196,64 @@ ggplot(data = data)+geom_segment(aes(x =s1, y =0,xend =s1, yend =s2, color= as.f
   annotate(geom = 'segment',x=0,xend=nrow(data),y=quantile(data$s2,0.95), 
            yend=quantile(data$s2,0.95),lty=4,color='black')
 
+###################################################################################################################
+#卡方检验
+
+t_value=vector()
+k2=vector()
+for(i in 1:m){
+  lm.fit <- lm(eg$vectors[,1]~x[,i])
+  t_value[i]<- summary(lm.fit)$coefficients[2,3]
+}
+
+  k2 <- t_value^2 / eg$values[1]
+
+
+P_K <- pchisq(k2, df=1, lower.tail=F )
+#plot(SNP,-log10(P_K))
+
+#提取染色体信息
+chromosome <- read.gdsn(index.gdsn(gdsfile, "snp.chromosome"))
+
+#chr_AB <- lapply(chromosome, function(x) if (x %% 2 == 0) "A" else "B")
+
+
+data=data.frame(s1=1:m,s2=-log10(P_K),s3=chromosome)
+
+chr_gap=vector()
+chr=vector()
+j <- 1
+for (i in 2:m-1){
+  if(data$s3[i] != data$s3[i+1]){
+    chr_gap[j] <- i
+    j <- j+1
+  }
+}
+
+j <- 2
+chr[1] <- chr_gap[1]/2
+chr[22] <- (chr_gap[21]+100000)/2
+for (i in 1:20){
+  chr[j] <- (chr_gap[i]+chr_gap[i+1])/2
+  j <- j+1
+}
+
+for (i in 1:m){
+  data$s3[i] <- data$s3[i] %% 2 + 1 
+}
+
+#Manhattan plot
+#colors <- rainbow(length(unique(data$s3)))
+colors <- c('#fa450f','#242b66')
+ggplot(data = data)+geom_segment(aes(x =s1, y =0,xend =s1, yend =s2, color= as.factor(s3)),
+                                 linetype=1, linewidth=0.6)+
+  scale_color_manual(values = colors)+ 
+  scale_y_continuous(expand = c(0,0),limits =c(0,20),breaks=seq(0,20,2))+
+  scale_x_discrete(expand = c(0,0),breaks=floor(chr),labels=paste0('chr',1:22),limits=as.character(c(1:100000)))+
+  theme_classic()+ 
+  labs(x='chromosome',y='-log10(P_value)')+ 
+  theme(legend.position = 'none')+ 
+  annotate(geom = 'segment',x=0,xend=nrow(data),y=quantile(data$s2,0.95), 
+           yend=quantile(data$s2,0.95),lty=4,color='black')+
+  annotate(geom = 'segment',x=0,xend=nrow(data),y=-log10(0.05/100000), 
+           yend=-log10(0.05/100000),lty=4,color='green')
