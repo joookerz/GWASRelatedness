@@ -101,7 +101,6 @@ V <- apply(A, 1, sum)/m
 #GRM
 G <- (genotype_matrix2 %*% t(genotype_matrix2)) /m
 
-G
 
 theta <- matrix(data=NA, nrow=200, ncol=200)
 
@@ -128,7 +127,7 @@ for(i in 1:200){
   }
 }
 
-P1 <- pnorm(P)
+P1 <- 2*pnorm(P, lower.tail=F)
 
 write.csv(theta, "C:/Users/86180/Desktop/genetic/theta.csv")
 write.csv(P, "C:/Users/86180/Desktop/genetic/P.csv")
