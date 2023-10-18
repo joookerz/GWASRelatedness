@@ -12,7 +12,7 @@ gdsfile <- snpgdsOpen(out_gds_file)
 summary_data <- snpgdsSummary(gdsfile)
 genotype_matrix <- snpgdsGetGeno(gdsfile)
 dim(genotype_matrix)
-
+summary_data$sample.id
 #genotype_matrix <- genotype_matrix[1:20,]
                 
 subset_matrix <- genotype_matrix[1:200, 1:10]
@@ -106,32 +106,47 @@ theta <- matrix(data=NA, nrow=200, ncol=200)
 
 for(i in 1:200){
   for(j in 1:200){
-    theta[i,j] <- V[i] + V[j] -2*G[i,j]
+    theta[i,j] <- 1-0.5*(V[i]+V[j]-2*G[i,j])
   }
 }
+
+hist(theta, 100)
 
 G0 <- G[col(G)<row(G)]
 G1 <- G[col(G) == row(G)]
 me <- 1/var(G0)
 
-hist(G0)
-hist(G1)
-range(G0)
-range(G1)
+#hist(G0)
+#hist(G1)
+#range(G0)
+#range(G1)
 
-P <- matrix(data=NA, nrow=200, ncol=200)
+Z <- matrix(data=NA, nrow=200, ncol=200)
 
 for(i in 1:200){
   for(j in 1:200){
-    P[i,j] <-  abs(theta[i,j]/sqrt(abs(2*(1-theta[i,j]*theta[i,j])/me)))
+    Z[i,j] <-  abs(theta[i,j]/sqrt(abs(2*(1-theta[i,j]*theta[i,j])/me)))
   }
 }
 
-P1 <- 2*pnorm(P, lower.tail=F)
+
+P1 <- 2*pnorm(Z,lower.tail=F)
+
+log_P <- -log10(P1)
+log_P[is.infinite(log_P)] <- 1e-302
+plot(theta,log_P,abline(h = -log10(0.05/(n*(n-1)/2)), col = "red", lty = 2))
+points_above <- which(log_P > -log10(0.05/(n*(n-1)/2)), arr.ind = TRUE)
+points_above2 <- which(theta > 0.4, arr.ind = TRUE)
+hist(P1)
+fdr <- p.adjust(P1, method= "BH")
+hist(fdr)
+
+######################################################################################################################
+
 
 write.csv(theta, "C:/Users/86180/Desktop/genetic/theta.csv")
 write.csv(P, "C:/Users/86180/Desktop/genetic/P.csv")
-
+ 
 eg <- eigen(G)
 barplot(eg$values)
 plot(eg$vectors[,1],eg$vectors[,2])
@@ -180,7 +195,7 @@ for (i in 1:20){
 for (i in 1:m){
   data$s3[i] <- data$s3[i] %% 2 + 1 
 }
-
+summary_data$sample.id[28]
 #Manhattan plot
 #colors <- rainbow(length(unique(data$s3)))
 colors <- c('#fa450f','#242b66')

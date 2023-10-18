@@ -101,7 +101,7 @@ A = genotype_matrix2^2
 V <- apply(A, 1, sum)/m
 #V
 
-G <- (A %*% t(A)) /m
+G <- (genotype_matrix2 %*% t(genotype_matrix2)) /m
 
 G
 
@@ -109,22 +109,26 @@ theta <- matrix(data=NA, nrow=16, ncol=16)
 
 for(i in 1:16){
   for(j in 1:16){
-    theta[i,j] <- V[i] + V[j] -2*G[i,j]
+    theta[i,j] <- 1-0.5*(V[i]+V[j]-2*G[i,j])
   }
 }
 
-G0 <- G[col(G)<row(G)]
-me <- var(G0)
+hist(theta,)
 
-P <- matrix(data=NA, nrow=16, ncol=16)
+G0 <- G[col(G)<row(G)]
+me <- 1/var(G0)
+
+Z <- matrix(data=NA, nrow=16, ncol=16)
 
 for(i in 1:16){
   for(j in 1:16){
-    P[i,j] <-  abs(theta[i,j]/sqrt(abs(2*(1-theta[i,j]*theta[i,j])*me)))
+    Z[i,j] <-  theta[i,j]/sqrt(abs(2*(1-theta[i,j]*theta[i,j])/me))
   }
 }
 
-P1 <- pnorm(P)
+Z0 <- Z[col(Z)<row(Z)]
+P1 <- pnorm(Z,lower.tail=T)
+
 
 write.csv(theta, "C:/Users/86180/Desktop/genetic/theta.csv")
 write.csv(P, "C:/Users/86180/Desktop/genetic/P.csv")
