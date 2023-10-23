@@ -1,8 +1,8 @@
 library(SNPRelate)
 library(ggplot2)
 
-plink_path <- "C:/Users/86180/Desktop/genetic/CHB.2.maf.geno"
-out_gds_file <- "C:/Users/86180/Desktop/genetic/CHB.2.maf.geno.gds"
+plink_path <- "~/Desktop/project_management/GWASrelatedness/data/CHB.2.maf.geno"
+out_gds_file <- "~/Desktop/project_management/GWASrelatedness/data/CHB.2.maf.geno.gds"
 
 # 读取 PLINK 文件并生成 GDS 文件
 snpgdsBED2GDS(bed.fn = paste0(plink_path, ".bed"), bim.fn = paste0(plink_path, ".bim"), fam.fn = paste0(plink_path, ".fam"), out.gdsfn = out_gds_file)
@@ -85,7 +85,7 @@ n <- nrow(x)
 p_hat = apply(x, 2, sum)/(2*n)
 #print(p_hat[1:10])
 
-scale命令标准化
+#scale命令标准化
 genotype_matrix2 <- scale(x,center = T,scale = T)
 
 #x[,51212]
@@ -153,7 +153,7 @@ hist(fdr)
 #提取点
 log_P <- -log10(P1)
 log_P[is.infinite(log_P)] <- 1e-302
-plot(theta,log_P,abline(h = -log10(0.05/(n*(n-1)/2)), col = "red", lty = 2))
+plot(theta,log_P,abline(h = -log10(0.05/(n*(n-1)/2)), col = "red", lty = 2), ylim = c(0,6))
 points_above <- which(log_P > -log10(0.05/(n*(n-1)/2)), arr.ind = TRUE)
 points_above2 <- which(theta > 0.4, arr.ind = TRUE)
 

@@ -1,10 +1,10 @@
 library(SNPRelate)
 
 # 指定 PLINK 文件的路径（不包括文件扩展名）
-plink_path <- "C:/Users/86180/Desktop/genetic/output"
+plink_path <- "/Users/joookerz/Desktop/project_management/GWASrelatedness/data/output"
 
 # 指定输出 GDS 文件的路径和文件名
-out_gds_file <- "C:/Users/86180/Desktop/genetic/output.gds"
+out_gds_file <- "/Users/joookerz/Desktop/project_management/GWASrelatedness/data/output.gds"
 
 # 读取 PLINK 文件并生成 GDS 文件
 snpgdsBED2GDS(bed.fn = paste0(plink_path, ".bed"), bim.fn = paste0(plink_path, ".bim"), fam.fn = paste0(plink_path, ".fam"), out.gdsfn = out_gds_file)
