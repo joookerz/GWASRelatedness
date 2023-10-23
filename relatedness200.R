@@ -214,7 +214,7 @@ ggplot(data = data)+geom_segment(aes(x =s1, y =0,xend =s1, yend =s2, color= as.f
 #SNPselection
 
 effect <- data.frame(s1=NA,s2=NA,s3=NA,s4=NA)
-for(i in 1:40){
+for(i in 1:60){
   P_control <- i*5e-3
   del <- as.integer(m*P_control)
   data_ranked <- data[order(data$s2, decreasing = TRUE),]
@@ -234,11 +234,18 @@ for(i in 1:40){
   G0 <- G[col(G)<row(G)]
   me <- 1/var(G0)
   effect[i,]$s1 <- P_control
-  effect[i,]$s2 <- m
+  effect[i,]$s2 <- m_hat
   effect[i,]$s3 <- me
-  effect[i,]$s4 <- m/me
+  effect[i,]$s4 <- m_hat/me
 }
 plot(effect$s1,effect$s4,xlab="P_control",ylab="m/me")
+
+ggplot(effect, aes(x = s1)) +
+  geom_line(aes(y = s2, color = "m")) +
+  geom_line(aes(y = s3, color = "me")) +
+  geom_line(aes(y = s4*(3e4/2), color = "m/me")) +
+  scale_color_manual(values = c("m" = "blue", "me" = "red", "m/me" = "green")) +
+  labs(x = "P_control",)+scale_y_continuous(name = "m&me",sec.axis = sec_axis(trans = ~./(3e4/2), name = "m/me"))
 
 #####################
 theta <- matrix(data=NA, nrow=n, ncol=n)
