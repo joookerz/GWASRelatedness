@@ -214,7 +214,7 @@ ggplot(data = data)+geom_segment(aes(x =s1, y =0,xend =s1, yend =s2, color= as.f
 #SNPselection
 
 effect <- data.frame(s1=NA,s2=NA,s3=NA,s4=NA)
-for(i in 1:60){
+for(i in 1:120){
   P_control <- i*5e-3
   del <- as.integer(m*P_control)
   data_ranked <- data[order(data$s2, decreasing = TRUE),]
@@ -247,7 +247,51 @@ ggplot(effect, aes(x = s1)) +
   scale_color_manual(values = c("m" = "blue", "me" = "red", "m/me" = "green")) +
   labs(x = "P_control",)+scale_y_continuous(name = "m&me",sec.axis = sec_axis(trans = ~./(3e4/2), name = "m/me"))
 
+
+p <- ggplot(effect, aes(x = s1)) +
+  geom_point(aes(y = s4, color="m/me"))+
+  scale_color_manual(values = c("m/me" = "orange"))+
+  labs(x = "P_control",y = "m/me")
+q <- ggplot(effect, aes(x = s1)) +
+  geom_point(aes(y = s2, color = "m")) +
+  geom_point(aes(y = s3*3.5, color = "me")) +
+  scale_color_manual(values = c("m" = "blue", "me" = "red"))+
+  labs(x = "P_control")+
+  scale_y_continuous(name = "m",sec.axis = sec_axis(trans = ~./3.5, name = "me"))
+library(cowplot)
+plot_grid(p, q, align = 'v', ncol = 1)
+
+
+ggplot(effect, aes(x = s1)) +
+  geom_bar(aes(y = s2, color = "m"), stat = "identity", position = position_dodge(width = 0.4)) +
+  geom_bar(aes(y = s3*3, color = "me"), stat = "identity", position = position_dodge(width = 0.4)) +
+  scale_color_manual(values = c("m" = "blue", "me" = "red"))+
+  labs(x = "P_value")+
+  scale_y_continuous(name = "m",sec.axis = sec_axis(trans = ~./3, name = "me"))
+
+
 #####################
+
+#me_max selection
+P_control <- 0.085
+del <- as.integer(m*P_control)
+data_ranked <- data[order(data$s2, decreasing = TRUE),]
+del_number <- data_ranked$s1[1:del]
+#data_selected <- data_ranked[-(1:del),]
+#plot(data_selected$s2)
+#plot(data_ranked$s2)
+
+genotype_matrix2_hat <- genotype_matrix2[,-del_number]
+dim(genotype_matrix2_hat)
+m_hat <- ncol(genotype_matrix2_hat)
+n <- nrow(genotype_matrix2_hat)
+
+A = genotype_matrix2_hat^2
+V <- apply(A, 1, sum)/m_hat
+G <- (genotype_matrix2_hat %*% t(genotype_matrix2_hat)) /m_hat
+G0 <- G[col(G)<row(G)]
+me <- 1/var(G0)
+
 theta <- matrix(data=NA, nrow=n, ncol=n)
 for(i in 1:n){
   for(j in 1:n){
@@ -271,6 +315,11 @@ points_above2 <- which(theta > 0.4, arr.ind = TRUE)
 hist(P1)
 fdr <- p.adjust(P1, method= "BH")
 hist(fdr)
+
+relatedness <- data.frame(s1=summary_data$sample.id[points_above[,1]],s2=summary_data$sample.id[points_above[,2]],s3=theta[points_above])
+#unique(theta[points_above])
+#summary_data$sample.id[points_above[,1]]
+
 #####################
 
 
