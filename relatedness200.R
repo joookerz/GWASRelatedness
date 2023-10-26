@@ -74,14 +74,13 @@ for(i in 1:m){
 x <- genotype_matrix1[1:200,]
 n <- nrow(x)
 
-p_hat = apply(x, 2, sum)/(2*n)
-#print(p_hat[1:10])
 
 #scale命令标准化
 genotype_matrix2 <- scale(x,center = T,scale = T)
 
 #genotype_matrix2[,1]
 
+#p_hat = apply(x, 2, sum)/(2*n)
 #genotype_matrix2 = apply(rbind(x,p_hat), 2, function(x) {if (var(x) != 0) {
 #  return((x - 2 * x[length(x)]) / sqrt(var(x)))}
 #  else {
@@ -292,31 +291,31 @@ G <- (genotype_matrix2_hat %*% t(genotype_matrix2_hat)) /m_hat
 G0 <- G[col(G)<row(G)]
 me <- 1/var(G0)
 
-theta <- matrix(data=NA, nrow=n, ncol=n)
+theta1 <- matrix(data=NA, nrow=n, ncol=n)
 for(i in 1:n){
   for(j in 1:n){
-    theta[i,j] <- 1-0.5*(V[i]+V[j]-2*G[i,j])
+    theta1[i,j] <- 1-0.5*(V[i]+V[j]-2*G[i,j])
   }
 }
 
 Z <- matrix(data=NA, nrow=n, ncol=n)
 for(i in 1:n){
   for(j in 1:n){
-    Z[i,j] <-  abs(theta[i,j]/sqrt(abs(2*(1-theta[i,j]*theta[i,j])/me)))
+    Z[i,j] <-  abs(theta1[i,j]/sqrt(abs(2*(1-theta1[i,j]*theta1[i,j])/me)))
   }
 }
 P1 <- 2*pnorm(Z,lower.tail=F)
 
 log_P <- -log10(P1)
 log_P[is.infinite(log_P)] <- 1e-302
-plot(theta,log_P,abline(h = -log10(0.05/(n*(n-1)/2)), col = "red", lty = 2))
+plot(theta1,log_P,abline(h = -log10(0.05/(n*(n-1)/2)), col = "red", lty = 2))
 points_above <- which(log_P > -log10(0.05/(n*(n-1)/2)), arr.ind = TRUE)
-points_above2 <- which(theta > 0.4, arr.ind = TRUE)
+points_above2 <- which(theta1 > 0.4, arr.ind = TRUE)
 hist(P1)
 fdr <- p.adjust(P1, method= "BH")
 hist(fdr)
 
-relatedness <- data.frame(s1=summary_data$sample.id[points_above[,1]],s2=summary_data$sample.id[points_above[,2]],s3=theta[points_above])
+relatedness <- data.frame(s1=summary_data$sample.id[points_above[,1]],s2=summary_data$sample.id[points_above[,2]],s3=theta1[points_above])
 #unique(theta[points_above])
 #summary_data$sample.id[points_above[,1]]
 
