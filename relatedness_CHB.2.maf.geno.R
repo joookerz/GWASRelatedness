@@ -97,6 +97,7 @@ genotype_matrix2 <- scale(x,center = T,scale = T)
  #}}
   #)[1:n,]
 
+#除去重复SNP
 points_NA <- which(is.na(genotype_matrix2), arr.ind = TRUE)
 unique(points_NA[,2])
 genotype_matrix2_hat <- genotype_matrix2[,-unique(points_NA[,2])]
@@ -226,6 +227,43 @@ ggplot(data = data)+geom_segment(aes(x =s1, y =0,xend =s1, yend =s2, color= as.f
   theme(legend.position = 'none')+ 
   annotate(geom = 'segment',x=0,xend=nrow(data),y=quantile(data$s2,0.95), 
            yend=quantile(data$s2,0.95),lty=4,color='black')
+
+###################################################################################################################
+#SNPselection
+
+effect <- data.frame(s1=NA,s2=NA,s3=NA,s4=NA)
+data_ranked <- data[order(data$s2, decreasing = TRUE),]
+for(i in 1:10){
+  P_control <- i*1e-4
+  del <- as.integer(m*P_control)
+  del_number <- data_ranked$s1[1:del]
+  #data_selected <- data_ranked[-(1:del),]
+  #plot(data_selected$s2)
+  #plot(data_ranked$s2)
+  
+  genotype_matrix2_hat <- genotype_matrix2[,-del_number]
+  dim(genotype_matrix2_hat)
+  m_hat <- ncol(genotype_matrix2_hat)
+  n <- nrow(genotype_matrix2_hat)
+  
+  A = genotype_matrix2_hat^2
+  V <- apply(A, 1, sum)/m_hat
+  G <- (genotype_matrix2_hat %*% t(genotype_matrix2_hat)) /m_hat
+  G0 <- G[col(G)<row(G)]
+  me <- 1/var(G0)
+  effect[i,]$s1 <- P_control
+  effect[i,]$s2 <- m_hat
+  effect[i,]$s3 <- me
+  effect[i,]$s4 <- m_hat/me
+}
+plot(effect$s1,effect$s4,xlab="P_control",ylab="m/me")
+
+ggplot(effect, aes(x = s1)) +
+  geom_line(aes(y = s2, color = "m")) +
+  geom_line(aes(y = s3, color = "me")) +
+  geom_line(aes(y = s4*(3e4/2), color = "m/me")) +
+  scale_color_manual(values = c("m" = "blue", "me" = "red", "m/me" = "green")) +
+  labs(x = "P_control",)+scale_y_continuous(name = "m&me",sec.axis = sec_axis(trans = ~./(3e4/2), name = "m/me"))
 
 ###################################################################################################################
 #卡方检验

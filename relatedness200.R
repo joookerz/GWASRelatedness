@@ -109,7 +109,9 @@ for(i in 1:200){
   }
 }
 
-hist(theta, 100)
+#par(mfrow = c(2, 1))
+hist(theta, 200, xlim = c(-0.1,0.1))
+hist(theta, 200, xlim = c(0.95,1.05))
 
 G0 <- G[col(G)<row(G)]
 G1 <- G[col(G) == row(G)]
@@ -131,14 +133,20 @@ for(i in 1:200){
 
 P1 <- 2*pnorm(Z,lower.tail=F)
 
+hist(P1)
+fdr <- p.adjust(P1, method= "BH")
+hist(fdr)
+
 log_P <- -log10(P1)
 log_P[is.infinite(log_P)] <- 1e-302
 plot(theta,log_P,abline(h = -log10(0.05/(n*(n-1)/2)), col = "red", lty = 2))
 points_above <- which(log_P > -log10(0.05/(n*(n-1)/2)), arr.ind = TRUE)
 points_above2 <- which(theta > 0.4, arr.ind = TRUE)
-hist(P1)
-fdr <- p.adjust(P1, method= "BH")
-hist(fdr)
+
+log_fdr <- -log10(fdr)
+log_fdr[is.infinite(log_fdr)] <- 1e-302
+plot(theta,log_fdr,abline(h = -log10(0.05/(n*(n-1)/2)), col = "red", lty = 2))
+
 
 ######################################################################################################################
 
@@ -163,6 +171,7 @@ for(i in 1:m){
   P_value[i]<- summary(lm.fit)$coefficients[2,4]
 }
 
+hist(P_value,100)
 #plot(SNP,-log10(P_value))
 
 #提取染色体信息
@@ -198,8 +207,7 @@ summary_data$sample.id[28]
 #Manhattan plot
 #colors <- rainbow(length(unique(data$s3)))
 colors <- c('#fa450f','#242b66')
-ggplot(data = data)+geom_segment(aes(x =s1, y =0,xend =s1, yend =s2, color= as.factor(s3)),
-                                 linetype=1, linewidth=0.6)+
+ggplot(data = data)+geom_point(aes(x =s1, y =s2, color= as.factor(s3)), size = 0.6)+
   scale_color_manual(values = colors)+ 
   scale_y_continuous(expand = c(0,0),limits =c(0,26),breaks=seq(0,26,2))+
   scale_x_discrete(expand = c(0,0),breaks=floor(chr),labels=paste0('chr',1:22),limits=as.character(c(1:100000)))+
@@ -318,6 +326,8 @@ hist(fdr)
 relatedness <- data.frame(s1=summary_data$sample.id[points_above[,1]],s2=summary_data$sample.id[points_above[,2]],s3=theta1[points_above])
 #unique(theta[points_above])
 #summary_data$sample.id[points_above[,1]]
+plot(theta,theta1, xlab="theta_fullSNP",ylab="theta_selected")
+
 
 #####################
 
@@ -332,19 +342,29 @@ for(i in 1:m){
   t_value[i]<- summary(lm.fit)$coefficients[2,3]
 }
 
-  k2 <- t_value^2 / eg$values[1]
+k2 <- t_value^2 / eg$values[1]
 
 
-P_K <- pchisq(k2, df=1, lower.tail=F )
+P_K <- pchisq(k2, df = 1, lower.tail = F )
 #plot(SNP,-log10(P_K))
+hist(P_K)
 
+#chi-square 矫正
+P_med <- median(P_K)
+q1 <- qchisq(P_med, df = 1, lower.tail = F )
+lambda_GC <- q1/0.455
+k2_hat <- k2/lambda_GC
+P_K_hat <- pchisq(k2_hat, df = 1, lower.tail = F )
+hist(P_K_hat)
+
+par(mfrow= c(1,2))
 #提取染色体信息
 chromosome <- read.gdsn(index.gdsn(gdsfile, "snp.chromosome"))
 
 #chr_AB <- lapply(chromosome, function(x) if (x %% 2 == 0) "A" else "B")
 
 
-data=data.frame(s1=1:m,s2=-log10(P_K),s3=chromosome)
+data=data.frame(s1=1:m,s2=-log10(P_K_hat),s3=chromosome)
 
 chr_gap=vector()
 chr=vector()
@@ -371,13 +391,13 @@ for (i in 1:m){
 #Manhattan plot
 #colors <- rainbow(length(unique(data$s3)))
 colors <- c('#fa450f','#242b66')
-ggplot(data = data)+geom_segment(aes(x =s1, y =0,xend =s1, yend =s2, color= as.factor(s3)),
-                                 linetype=1, linewidth=0.6)+
+ggplot(data = data)+geom_point(aes(x = s1, y = s2, color = as.factor(s3)), size = 0.6)+
   scale_color_manual(values = colors)+ 
   scale_y_continuous(expand = c(0,0),limits =c(0,20),breaks=seq(0,20,2))+
   scale_x_discrete(expand = c(0,0),breaks=floor(chr),labels=paste0('chr',1:22),limits=as.character(c(1:100000)))+
   theme_classic()+ 
   labs(x='chromosome',y='-log10(P_value)')+ 
+  
   theme(legend.position = 'none')+ 
   annotate(geom = 'segment',x=0,xend=nrow(data),y=quantile(data$s2,0.95), 
            yend=quantile(data$s2,0.95),lty=4,color='black')+
