@@ -160,9 +160,9 @@ points_above2 <- which(theta > 0.4, arr.ind = TRUE)
 
 ######################################################################################################################
 
-write.csv(G, "C:/Users/86180/Desktop/genetic/G.csv")
-write.csv(theta, "C:/Users/86180/Desktop/genetic/theta.csv")
-write.csv(P, "C:/Users/86180/Desktop/genetic/P.csv")
+#write.csv(G, "C:/Users/86180/Desktop/genetic/G.csv")
+#write.csv(theta, "C:/Users/86180/Desktop/genetic/theta.csv")
+#write.csv(P, "C:/Users/86180/Desktop/genetic/P.csv")
  
 eg <- eigen(G)
 barplot(eg$values)
@@ -203,10 +203,10 @@ for (i in 2:m-1){
 }
 
 j <- 2
-chr[1] <- chr_gap[1]/2
-chr[22] <- (chr_gap[21]+m)/2
+chr[1] <- floor(chr_gap[1]/2)
+chr[22] <- floor((chr_gap[21]+m)/2)
 for (i in 1:20){
-  chr[j] <- (chr_gap[i]+chr_gap[i+1])/2
+  chr[j] <- floor((chr_gap[i]+chr_gap[i+1])/2)
   j <- j+1
 }
 
@@ -217,10 +217,9 @@ summary_data$sample.id[28]
 #Manhattan plot
 #colors <- rainbow(length(unique(data$s3)))
 colors <- c('#fa450f','#242b66')
-ggplot(data = data)+geom_segment(aes(x =s1, y =0,xend =s1, yend =s2, color= as.factor(s3)),
-                                 linetype=1, linewidth=0.6)+
+ggplot(data = data)+geom_point(aes(x =s1, y =s2, color= as.factor(s3)), size = 0.6)+
   scale_color_manual(values = colors)+ 
-  scale_y_continuous(expand = c(0,0),limits =c(0,10),breaks=seq(0,10,1))+
+  scale_y_continuous(expand = c(0,0),limits =c(0,26),breaks=seq(0,26,2))+
   scale_x_discrete(expand = c(0,0),breaks=floor(chr),labels=paste0('chr',1:22),limits=as.character(c(1:m)))+
   theme_classic()+ 
   labs(x='chromosome',y='-log10(P_value)')+ 
@@ -241,20 +240,20 @@ for(i in 1:10){
   #plot(data_selected$s2)
   #plot(data_ranked$s2)
   
-  genotype_matrix2_hat <- genotype_matrix2[,-del_number]
-  dim(genotype_matrix2_hat)
-  m_hat <- ncol(genotype_matrix2_hat)
-  n <- nrow(genotype_matrix2_hat)
+  genotype_matrix2_hat2 <- genotype_matrix2_hat[,-del_number]
+  dim(genotype_matrix2_hat2)
+  m_hat <- ncol(genotype_matrix2_hat2)
+  n <- nrow(genotype_matrix2_hat2)
   
-  A = genotype_matrix2_hat^2
+  A = genotype_matrix2_hat2^2
   V <- apply(A, 1, sum)/m_hat
-  G <- (genotype_matrix2_hat %*% t(genotype_matrix2_hat)) /m_hat
+  G <- (genotype_matrix2_hat2 %*% t(genotype_matrix2_hat2)) /m_hat
   G0 <- G[col(G)<row(G)]
-  me <- 1/var(G0)
+  me1 <- 1/var(G0)
   effect[i,]$s1 <- P_control
   effect[i,]$s2 <- m_hat
-  effect[i,]$s3 <- me
-  effect[i,]$s4 <- m_hat/me
+  effect[i,]$s3 <- me1
+  effect[i,]$s4 <- m_hat/me1
 }
 plot(effect$s1,effect$s4,xlab="P_control",ylab="m/me")
 
@@ -300,10 +299,10 @@ for (i in 2:m-1){
 }
 
 j <- 2
-chr[1] <- chr_gap[1]/2
-chr[22] <- (chr_gap[21]+100000)/2
+chr[1] <- floor(chr_gap[1]/2)
+chr[22] <- floor((chr_gap[21]+m)/2)
 for (i in 1:20){
-  chr[j] <- (chr_gap[i]+chr_gap[i+1])/2
+  chr[j] <- floor((chr_gap[i]+chr_gap[i+1])/2)
   j <- j+1
 }
 
@@ -318,7 +317,7 @@ ggplot(data = data)+geom_segment(aes(x =s1, y =0,xend =s1, yend =s2, color= as.f
                                  linetype=1, linewidth=0.6)+
   scale_color_manual(values = colors)+ 
   scale_y_continuous(expand = c(0,0),limits =c(0,20),breaks=seq(0,20,2))+
-  scale_x_discrete(expand = c(0,0),breaks=floor(chr),labels=paste0('chr',1:22),limits=as.character(c(1:100000)))+
+  scale_x_discrete(expand = c(0,0),breaks=floor(chr),labels=paste0('chr',1:22),limits=as.character(c(1:m)))+
   theme_classic()+ 
   labs(x='chromosome',y='-log10(P_value)')+ 
   theme(legend.position = 'none')+ 
