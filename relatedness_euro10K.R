@@ -221,8 +221,8 @@ ggplot(data = data)+geom_point(aes(x =s1, y =s2, color= as.factor(s3)), size = 0
 #SNPselection
 
 effect <- data.frame(s1=NA,s2=NA,s3=NA,s4=NA)
-for(i in 1:120){
-  P_control <- i*5e-3
+for(i in 1:60){
+  P_control <- i*1e-2
   del <- as.integer(m*P_control)
   data_ranked <- data[order(data$s2, decreasing = TRUE),]
   del_number <- data_ranked$s1[1:del]
