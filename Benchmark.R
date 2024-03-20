@@ -77,9 +77,9 @@ for(i in 1:m){
 x <- genotype_matrix1[1:n,]
 n <- nrow(x)
 
-#
-freq <- colMeans(x)/2
-hist(freq)
+################################################################################
+
+################################################################################
 #
 p_hat = apply(x, 2, sum)/(2*n)
 #print(p_hat[1:10])
@@ -87,7 +87,16 @@ p_hat = apply(x, 2, sum)/(2*n)
 #scale命令标准化
 genotype_matrix2 <- scale(x,center = T,scale = T)
 
+#随机取1000
+set.seed(111)
+random_columns <- sample(1:m, 200)
+genotype_matrix2 <- genotype_matrix2[, random_columns]
+m <- 200
 #x[,51212]
+
+#MAF
+freq <- colMeans(x[, random_columns])/2
+hist(freq, 20)
 
 #genotype_matrix2 = apply(rbind(x,p_hat), 2, function(x) {if (var(x) != 0) {
 #return((x - 2 * x[length(x)]) / sqrt(var(x)))}
@@ -103,16 +112,27 @@ A = genotype_matrix2^2
 #A[,11006:11010]
 #dim(A)
 V <- apply(A, 1, sum)/m
-#V
-################################################################################
 
+################################################################################
+#Randomization
+
+for (i in 1:100){
+  zb <- rnorm(n,0,1)
+  L <- genotype_matrix2%*%(t(genotype_matrix2)%*%zb)
+  LB[i] <- sum(L^2)/m^2
+}
+LB <- mean(LB)
+
+me_Rand <- n*(n+1)/(LB-n)
+
+################################################################################
 #GRM
 
 G <- (genotype_matrix2 %*% t(genotype_matrix2)) /m
 
 G0 <- G[col(G)<row(G)]
 G1 <- G[col(G) == row(G)]
-me_GRM <- 1/var(G0)
+me <- 1/var(G0)
 
 #hist(G0)
 #hist(G1)
@@ -137,6 +157,7 @@ points_above2_GRM <- which(theta > 0.4, arr.ind = TRUE)
 ################################################################################
 
 #encGRM
+
 k <- 5000
 S <- matrix(rnorm(m * k, mean = 0, sd = 1/sqrt(k)), nrow = m, ncol = k)
 
@@ -145,7 +166,7 @@ G_enc <- (genotype_matrix3 %*% t(genotype_matrix3)) /m
 
 G0_enc <- G_enc[col(G_enc)<row(G_enc)]
 G1_enc <- G_enc[col(G_enc) == row(G_enc)]
-me_enc <- 1/var(G0_enc)
+
 
 #hist(G0)
 #hist(G1)
@@ -182,13 +203,12 @@ for(i in 1:n){
 
 G0_enc_reg <- G_enc_reg[col(G_enc_reg)<row(G_enc_reg)]
 G1_enc_reg <- G_enc_reg[col(G_enc_reg) == row(G_enc_reg)]
-me_enc_reg <- 1/var(G0_enc_reg)
 
 Z_G_enc_reg <- matrix(data=NA, nrow=n, ncol=n)
 
 for(i in 1:n){
   for(j in 1:n){
-    Z_G_enc_reg[i,j] <- abs(G_enc_reg[i,j]/sqrt(abs((1-G_enc_reg[i,j]^2)/me_enc_reg+(1-G_enc_reg[i,j]^2)/k)))
+    Z_G_enc_reg[i,j] <- abs(G_enc_reg[i,j]/sqrt(abs((1-G_enc_reg[i,j]^2)/me+(1-G_enc_reg[i,j]^2)/k)))
   }
 }
 
@@ -215,13 +235,12 @@ for(i in 1:n){
 
 G0_reg <- G_reg[col(G_reg)<row(G_reg)]
 G1_reg <- G_reg[col(G_reg) == row(G_reg)]
-me_reg <- 1/var(G0_reg)
 
 Z_G_reg <- matrix(data=NA, nrow=n, ncol=n)
 
 for(i in 1:n){
   for(j in 1:n){
-    Z_G_reg[i,j] <- abs(G_reg[i,j]/sqrt(abs((1-G_reg[i,j]^2)/me_reg)))
+    Z_G_reg[i,j] <- abs(G_reg[i,j]/sqrt(abs((1-G_reg[i,j]^2)/me)))
   }
 }
 
@@ -245,11 +264,11 @@ for(i in 1:n){
   }
 }
 
-hist(theta, 100)
+#hist(theta, 100)
 
 G0 <- G[col(G)<row(G)]
 G1 <- G[col(G) == row(G)]
-me_DeepKin <- 1/var(G0)
+
 
 #hist(G0)
 #hist(G1)
@@ -274,11 +293,11 @@ points_above2 <- which(theta > 0.4, arr.ind = TRUE)
 ################################################################################
 
 #绘比较图
-
+# P
 P_plot <- list(P_GRM, P_G_enc, P_G_enc_reg, P_G_reg, P1)
 name_row <- list("","P_GRM", "P_G_enc", "P_G_enc_reg", "P_G_reg", "P_DeepKin")
 name_col <- list("P_GRM", "P_G_enc", "P_G_enc_reg", "P_G_reg", "P_DeepKin")
-pdf("~/Desktop/benchmark.pdf", width = 12, height = 12) 
+pdf("~/Desktop/benchmark_P.pdf", width = 12, height = 12) 
 
 par(mfrow = c(6, 6))
 
@@ -291,35 +310,92 @@ for (i in 1:5) {
   plot(1, type = "n", axes = FALSE, xlab = "", ylab = "", main = name_col[[i]])
   text((i - 0.5), 6, name_col[[i]], cex = 1.5, font = 2, srt = 90, adj = 1)
   for (j in 1:5) {
-    plot(P_plot[[i]], P_plot[[j]], xlab = "", ylab = "")
+    cor <- cor(P_plot[[i]][col(P_plot[[i]])<row(P_plot[[i]])],P_plot[[j]][col(P_plot[[j]])<row(P_plot[[j]])])
+    plot(P_plot[[i]], P_plot[[j]], xlab = "", ylab = "", main = paste("cor =", cor))
   }
 }
 
 dev.off()
 
-#
+# theta
 P_plot <- list(G, G_enc, G_enc_reg, G_reg, theta)
+name_row <- list("","theta_GRM", "theta_G_enc", "theta_G_enc_reg", "theta_G_reg", "theta_DeepKin")
+name_col <- list("theta_GRM", "theta_G_enc", "theta_G_enc_reg", "theta_G_reg", "theta_DeepKin")
+pdf("~/Desktop/benchmark_theta.pdf", width = 12, height = 12) 
+
+par(mfrow = c(6, 6))
+
+for (i in 1:6) {
+  plot(1, type = "n", axes = FALSE, xlab = "", ylab = "", main = name_row[[i]])
+  text(0.5, (6 - i - 0.5), name_row[[i]], cex = 1.5, font = 2, adj = 0)
+}
+
+for (i in 1:5) {
+  plot(1, type = "n", axes = FALSE, xlab = "", ylab = "", main = name_col[[i]])
+  text((i - 0.5), 6, name_col[[i]], cex = 1.5, font = 2, srt = 90, adj = 1)
+  for (j in 1:5) {
+    cor <- cor(P_plot[[i]][col(P_plot[[i]])<row(P_plot[[i]])],P_plot[[j]][col(P_plot[[j]])<row(P_plot[[j]])])
+    plot(P_plot[[i]], P_plot[[j]], xlab = "", ylab = "", main = paste("cor =", cor))
+  }
+}
+
+dev.off()
+
+#Z
+P_plot <- list(Z, Z_G_enc, Z_G_enc_reg, Z_G_reg, Z)
+name_row <- list("","Z_GRM", "Z_G_enc", "Z_G_enc_reg", "Z_G_reg", "Z")
+name_col <- list("Z_GRM", "Z_G_enc", "Z_G_enc_reg", "Z_G_reg", "Z_DeepKin")
+pdf("~/Desktop/benchmark_Z.pdf", width = 12, height = 12) 
+
+par(mfrow = c(6, 6))
+
+for (i in 1:6) {
+  plot(1, type = "n", axes = FALSE, xlab = "", ylab = "", main = name_row[[i]])
+  text(0.5, (6 - i - 0.5), name_row[[i]], cex = 1.5, font = 2, adj = 0)
+}
+
+for (i in 1:5) {
+  plot(1, type = "n", axes = FALSE, xlab = "", ylab = "", main = name_col[[i]])
+  text((i - 0.5), 6, name_col[[i]], cex = 1.5, font = 2, srt = 90, adj = 1)
+  for (j in 1:5) {
+    cor <- cor(P_plot[[i]][col(P_plot[[i]])<row(P_plot[[i]])],P_plot[[j]][col(P_plot[[j]])<row(P_plot[[j]])])
+    plot(P_plot[[i]], P_plot[[j]], xlab = "", ylab = "", main = paste("cor =", cor))
+  }
+}
+
+dev.off()
+
+#P_hist
+par(mfrow = c(1, 5))
+P_plot <- list(P_GRM, P_G_enc, P_G_enc_reg, P_G_reg, P1)
 name_row <- list("","P_GRM", "P_G_enc", "P_G_enc_reg", "P_G_reg", "P_DeepKin")
 name_col <- list("P_GRM", "P_G_enc", "P_G_enc_reg", "P_G_reg", "P_DeepKin")
-pdf("~/Desktop/benchmark2.pdf", width = 12, height = 12) 
-
-par(mfrow = c(6, 6))
-
-for (i in 1:6) {
-  plot(1, type = "n", axes = FALSE, xlab = "", ylab = "", main = name_row[[i]])
-  text(0.5, (6 - i - 0.5), name_row[[i]], cex = 1.5, font = 2, adj = 0)
-}
+pdf("~/Desktop/benchmark_Phist.pdf", width = 12, height = 12) 
 
 for (i in 1:5) {
-  plot(1, type = "n", axes = FALSE, xlab = "", ylab = "", main = name_col[[i]])
-  text((i - 0.5), 6, name_col[[i]], cex = 1.5, font = 2, srt = 90, adj = 1)
-  for (j in 1:5) {
-    plot(P_plot[[i]], P_plot[[j]], xlab = "", ylab = "")
-  }
+    hist(P_plot[[i]] , main = paste(name_col[[i]]))
 }
 
 dev.off()
 
-hist(cor)
+#分布比较
+P_plot <- list(G, G_enc, G_enc_reg, G_reg, theta)
+
+hist(G, 1000, probability = TRUE)
+curve(dnorm(x, mean = mean(G), sd = sqrt((1+mean(G)^2)/me)), col = "red", lwd = 2, add = TRUE)
+
+hist(G_enc, 1000, probability = TRUE)
+curve(dnorm(x, mean = mean(G_enc), sd = sqrt((1+mean(G_enc)^2)/me+(1+mean(G_enc)^2)/k)), col = "red", lwd = 2, add = TRUE)
+
+hist(G_enc_reg, 1000, probability = TRUE)
+curve(dnorm(x, mean = mean(G_enc_reg), sd = sqrt((1-mean(G_enc_reg)^2)/me+(1-mean(G_enc_reg)^2)/k)), col = "red", lwd = 2, add = TRUE)
+
+hist(G_reg, 1000, probability = TRUE)
+curve(dnorm(x, mean = mean(G_reg), sd = sqrt((1-mean(G_reg)^2)/me)), col = "red", lwd = 2, add = TRUE)
+
+hist(theta, 1000, probability = TRUE)
+curve(dnorm(x, mean = mean(theta), sd = sqrt(2*(1-mean(theta))^2/me)), col = "red", lwd = 2, add = TRUE)
+
+
 cor(P_G_enc[col(P_G_enc)<row(P_G_enc)],P_GRM[col(P_GRM)<row(P_GRM)])
 cor(P_GRM[col(P_GRM)<row(P_GRM)],P1[col(P1)<row(P1)])

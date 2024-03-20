@@ -266,13 +266,14 @@ fdr <- p.adjust(P1, method= "BH")
 hist(fdr)
 
 relatedness <- data.frame(sample1=summary_data$sample.id[points_above[,1]],sample2=summary_data$sample.id[points_above[,2]],theta=theta1[points_above])
+relatedness_unique <- relatedness[!duplicated(relatedness$theta), ]
+
 #unique(theta[points_above])
 #summary_data$sample.id[points_above[,1]]
 plot(theta,theta1, xlab="theta_fullSNP",ylab="theta_selected")
 
 
 #####################
-
 
 #####################
 
